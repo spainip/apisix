@@ -1,0 +1,7 @@
+defaultNamespace: apisix
+helm:
+  releaseName: api-gateway
+  valuesFiles:
+    - values.yaml
+  takeOwnership: true
+  force: true
