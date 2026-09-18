@@ -30,9 +30,11 @@ helm:
             ipList:
               - 10.42.0.0/16
               - 127.0.0.0/8
+              - 135.181.17.116/32
         trustedAddresses:
           - 10.42.0.0/16
           - 127.0.0.0/8
+          - 135.181.17.116/32
         nginx:
           http:
             realIpHeader: X-Forwarded-For
@@ -40,6 +42,7 @@ helm:
             realIpFrom:
               - 10.42.0.0/16
               - 127.0.0.0/8
+              - 135.181.17.116/32
         prometheus:
           enabled: true
           containerPort: 9091
