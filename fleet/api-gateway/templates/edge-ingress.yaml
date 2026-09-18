@@ -9,6 +9,17 @@ spec:
     removeHeader: true
     realm: APISIX Dashboard
 ---
+apiVersion: traefik.io/v1alpha1
+kind: Middleware
+metadata:
+  name: api-gateway-dashboard-root-redirect
+  namespace: apisix
+spec:
+  redirectRegex:
+    regex: "^https?://api-admin\\.spainip\\.es/$"
+    replacement: "https://api-admin.spainip.es/ui/"
+    permanent: false
+---
 apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
@@ -41,7 +52,7 @@ metadata:
     traefik.ingress.kubernetes.io/router.entrypoints: websecure
     traefik.ingress.kubernetes.io/router.tls: "true"
     traefik.ingress.kubernetes.io/router.tls.certresolver: acmeresolver
-    traefik.ingress.kubernetes.io/router.middlewares: apisix-api-gateway-dashboard-basic-auth@kubernetescrd
+    traefik.ingress.kubernetes.io/router.middlewares: apisix-api-gateway-dashboard-basic-auth@kubernetescrd,apisix-api-gateway-dashboard-root-redirect@kubernetescrd
 spec:
   ingressClassName: traefik
   rules:
