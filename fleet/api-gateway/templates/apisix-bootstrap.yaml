@@ -52,8 +52,9 @@ spec:
               put "${admin_url}/consumer_groups/basic" '{"desc":"Basic API consumers","plugins":{"limit-count":{"count":300,"time_window":60,"key":"consumer_name","key_type":"var","policy":"local","rejected_code":429,"show_limit_quota_header":true}}}'
               put "${admin_url}/consumer_groups/premium-tier" '{"desc":"Premium API consumers","plugins":{"limit-count":{"count":3000,"time_window":60,"key":"consumer_name","key_type":"var","policy":"local","rejected_code":429,"show_limit_quota_header":true}}}'
 
-              consumer_json=$(printf '{"username":"demo-basic","group_id":"basic","plugins":{"key-auth":{"key":"%s"}}}' "${DEMO_API_KEY}")
-              put "${admin_url}/consumers/demo-basic" "${consumer_json}"
+              put "${admin_url}/consumers/demo-basic" '{"username":"demo-basic","group_id":"basic"}'
+              credential_json=$(printf '{"id":"demo-basic-key","plugins":{"key-auth":{"key":"%s"}}}' "${DEMO_API_KEY}")
+              put "${admin_url}/consumers/demo-basic/credentials/demo-basic-key" "${credential_json}"
 
               put "${admin_url}/routes/1" '{"name":"api-public-v1","hosts":["api.spainip.es"],"uris":["/healthz","/v1/hello","/openapi.json","/docs","/docs/*"],"methods":["GET"],"upstream_id":"1","plugins":{"limit-count":{"count":60,"time_window":60,"key":"remote_addr","key_type":"var","policy":"local","rejected_code":429,"show_limit_quota_header":true}}}'
               put "${admin_url}/routes/2" '{"name":"api-authenticated-v1","hosts":["api.spainip.es"],"uris":["/v1/items","/v1/echo"],"upstream_id":"1","plugins":{"key-auth":{"header":"apikey","query":"key"},"limit-count":{"count":300,"time_window":60,"key":"consumer_name","key_type":"var","policy":"local","rejected_code":429,"show_limit_quota_header":true}}}'
