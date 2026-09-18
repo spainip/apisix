@@ -16,7 +16,6 @@ helm:
           memory: 768Mi
       service:
         type: ClusterIP
-        externalTrafficPolicy: Cluster
       apisix:
         admin:
           enabled: true
