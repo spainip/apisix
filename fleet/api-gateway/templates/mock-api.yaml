@@ -1,0 +1,138 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: api-gw-test-source
+  namespace: apisix
+  labels:
+    app.kubernetes.io/name: api-gw-test
+data:
+  package.json: |
+    {
+      "name": "api-gw-test",
+      "version": "1.0.0",
+      "private": true,
+      "dependencies": {
+        "express": "^5.1.0",
+        "swagger-ui-express": "^5.0.1"
+      }
+    }
+  server.js: |
+    const express = require("express");
+    const swaggerUi = require("swagger-ui-express");
+    const app = express();
+    const port = Number(process.env.PORT || 3000);
+    app.use(express.json());
+    const openapi = {
+      openapi: "3.0.3",
+      info: {
+        title: "SpainIP APISIX mock API",
+        version: "1.0.0",
+        description: "Small API for testing APISIX routing, API keys and rate limits."
+      },
+      servers: [{ url: "/" }],
+      paths: {
+        "/healthz": { get: { summary: "Health check", responses: { "200": { description: "Healthy" } } } },
+        "/v1/hello": { get: { summary: "Public hello endpoint", responses: { "200": { description: "A greeting" }, "429": { description: "Rate limit exceeded" } } } },
+        "/v1/items": { get: { summary: "Authenticated item list", security: [{ apiKey: [] }], responses: { "200": { description: "Items" }, "401": { description: "Missing or invalid API key" }, "429": { description: "Rate limit exceeded" } } } },
+        "/v1/echo": { post: { summary: "Authenticated echo endpoint", security: [{ apiKey: [] }], requestBody: { required: true, content: { "application/json": { schema: { type: "object", additionalProperties: true } } } }, responses: { "200": { description: "Echoed payload" }, "401": { description: "Missing or invalid API key" } } } }
+      },
+      components: {
+        securitySchemes: { apiKey: { type: "apiKey", in: "header", name: "apikey" } }
+      }
+    };
+    app.get("/healthz", (_req, res) => res.json({ status: "ok" }));
+    app.get("/v1/hello", (_req, res) => res.json({ message: "hello from the SpainIP mock API", service: "api-gw-test", timestamp: new Date().toISOString() }));
+    app.get("/v1/items", (_req, res) => res.json({ items: [{ id: 1, name: "alpha" }, { id: 2, name: "bravo" }, { id: 3, name: "charlie" }] }));
+    app.post("/v1/echo", (req, res) => res.json({ received: req.body ?? null }));
+    app.get("/openapi.json", (_req, res) => res.json(openapi));
+    app.use("/docs", swaggerUi.serve, swaggerUi.setup(openapi, { customSiteTitle: "SpainIP mock API" }));
+    app.listen(port, "0.0.0.0", () => console.log("api-gw-test listening on :" + port));
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: api-gw-test
+  namespace: apisix
+  labels:
+    app.kubernetes.io/name: api-gw-test
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: api-gw-test
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: api-gw-test
+    spec:
+      securityContext:
+        seccompProfile:
+          type: RuntimeDefault
+      containers:
+        - name: api-gw-test
+          image: node:22-alpine
+          imagePullPolicy: IfNotPresent
+          command: ["sh", "-c"]
+          args:
+            - |
+              set -eu
+              mkdir -p /tmp/api-gw-test
+              cp /source/package.json /tmp/api-gw-test/package.json
+              cp /source/server.js /tmp/api-gw-test/server.js
+              cd /tmp/api-gw-test
+              npm install --omit=dev --no-audit --no-fund
+              exec node server.js
+          env:
+            - name: PORT
+              value: "3000"
+          ports:
+            - name: http
+              containerPort: 3000
+          readinessProbe:
+            httpGet:
+              path: /healthz
+              port: http
+            initialDelaySeconds: 5
+            periodSeconds: 5
+          livenessProbe:
+            httpGet:
+              path: /healthz
+              port: http
+            initialDelaySeconds: 20
+            periodSeconds: 10
+          resources:
+            requests:
+              cpu: 25m
+              memory: 96Mi
+            limits:
+              cpu: 500m
+              memory: 384Mi
+          securityContext:
+            runAsNonRoot: true
+            runAsUser: 1000
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: false
+          volumeMounts:
+            - name: source
+              mountPath: /source
+              readOnly: true
+      volumes:
+        - name: source
+          configMap:
+            name: api-gw-test-source
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: api-gw-test
+  namespace: apisix
+  labels:
+    app.kubernetes.io/name: api-gw-test
+spec:
+  type: ClusterIP
+  selector:
+    app.kubernetes.io/name: api-gw-test
+  ports:
+    - name: http
+      port: 80
+      targetPort: http
