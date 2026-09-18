@@ -1,7 +1,61 @@
 defaultNamespace: apisix
 helm:
   releaseName: api-gateway
-  valuesFiles:
-    - values.yaml
   takeOwnership: true
   force: true
+  values:
+    apisix:
+      fullnameOverride: apisix
+      replicaCount: 1
+      resources:
+        requests:
+          cpu: 100m
+          memory: 256Mi
+        limits:
+          cpu: 1000m
+          memory: 768Mi
+      service:
+        type: ClusterIP
+        externalTrafficPolicy: Cluster
+      apisix:
+        admin:
+          enabled: true
+          enable_admin_ui: true
+          type: ClusterIP
+          credentials:
+            secretName: apisix-admin-credentials
+            secretAdminKey: admin
+            secretViewerKey: viewer
+          allow:
+            ipList:
+              - 10.42.0.0/16
+              - 127.0.0.0/8
+        trustedAddresses:
+          - 10.42.0.0/16
+          - 127.0.0.0/8
+        nginx:
+          http:
+            realIpHeader: X-Forwarded-For
+            realIpRecursive: "on"
+            realIpFrom:
+              - 10.42.0.0/16
+              - 127.0.0.0/8
+        prometheus:
+          enabled: true
+          containerPort: 9091
+          path: /apisix/prometheus/metrics
+        deployment:
+          mode: traditional
+          role_traditional:
+            config_provider: etcd
+      etcd:
+        enabled: true
+        replicaCount: 1
+        persistence:
+          enabled: true
+          size: 8Gi
+        autoCompactionRetention: "1h"
+      metrics:
+        serviceMonitor:
+          enabled: true
+          interval: 30s
