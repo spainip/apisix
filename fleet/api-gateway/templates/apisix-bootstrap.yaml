@@ -50,7 +50,7 @@ spec:
               put "${admin_url}/upstreams/1" '{"name":"api-gw-test","type":"roundrobin","nodes":{"api-gw-test:80":1}}'
 
               put "${admin_url}/consumer_groups/basic" '{"desc":"Basic API consumers","plugins":{"limit-count":{"count":300,"time_window":60,"key":"consumer_name","key_type":"var","policy":"local","rejected_code":429,"show_limit_quota_header":true}}}'
-              put "${admin_url}/consumer_groups/premium" '{"desc":"Premium API consumers","plugins":{"limit-count":{"count":3000,"time_window":60,"key":"consumer_name","key_type":"var","policy":"local","rejected_code":429,"show_limit_quota_header":true}}}'
+              put "${admin_url}/consumer_groups/premium-tier" '{"desc":"Premium API consumers","plugins":{"limit-count":{"count":3000,"time_window":60,"key":"consumer_name","key_type":"var","policy":"local","rejected_code":429,"show_limit_quota_header":true}}}'
 
               consumer_json=$(printf '{"username":"demo-basic","group_id":"basic","plugins":{"key-auth":{"key":"%s"}}}' "${DEMO_API_KEY}")
               put "${admin_url}/consumers/demo-basic" "${consumer_json}"
