@@ -15,7 +15,7 @@ The Fleet bundle owns the APISIX Helm release, the mock API, the edge Ingress ob
 APISIX Admin API and Dashboard manage consumers, credentials, consumer groups and plugins. The Fleet bootstrap creates a non-production demo consumer and two example groups:
 
 - `basic`: 300 requests/minute per authenticated consumer.
-- `premium`: 3000 requests/minute per authenticated consumer.
+- `premium-tier`: 3000 requests/minute per authenticated consumer.
 
 The demo key is generated outside Git and stored in the cluster Secret `api-gateway-demo-key`. Rotate it in the Dashboard before using this installation for real clients.
 
