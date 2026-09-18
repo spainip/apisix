@@ -1,16 +1,18 @@
+fullnameOverride: apisix
+replicaCount: 1
+resources:
+  requests:
+    cpu: 100m
+    memory: 256Mi
+  limits:
+    cpu: 1000m
+    memory: 768Mi
+
+service:
+  type: ClusterIP
+  externalTrafficPolicy: Cluster
+
 apisix:
-  fullnameOverride: apisix
-  replicaCount: 1
-  resources:
-    requests:
-      cpu: 100m
-      memory: 256Mi
-    limits:
-      cpu: 1000m
-      memory: 768Mi
-  service:
-    type: ClusterIP
-    externalTrafficPolicy: Cluster
   admin:
     enabled: true
     enable_admin_ui: true
@@ -41,14 +43,16 @@ apisix:
     mode: traditional
     role_traditional:
       config_provider: etcd
-  etcd:
+
+etcd:
+  enabled: true
+  replicaCount: 1
+  persistence:
     enabled: true
-    replicaCount: 1
-    persistence:
-      enabled: true
-      size: 8Gi
-    autoCompactionRetention: "1h"
-  metrics:
-    serviceMonitor:
-      enabled: true
-      interval: 30s
+    size: 8Gi
+  autoCompactionRetention: "1h"
+
+metrics:
+  serviceMonitor:
+    enabled: true
+    interval: 30s
